@@ -4,12 +4,6 @@ on:
   schedule:
     - cron: '43 0 1 * *'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: '干跑/心跳模式（只探活，不发单）'
-        required: false
-        default: 'false'
-        type: boolean
 
 permissions:
   contents: write
@@ -46,7 +40,6 @@ jobs:
       RENEWHELPER_LABEL: ${{ vars.RENEWHELPER_LABEL || 'RenewHelper同步' }}
       # ---- 其它 ----
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'Asia/Shanghai' }}
-      DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
 
     steps:
       - name: 检出公开仓库
