@@ -47,8 +47,6 @@ jobs:
       # ---- 其它 ----
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'Asia/Shanghai' }}
       DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
-      # 验证门槛（默认 0=不点 apu Continue；验证完置 1 打开）
-      CONTINUE_GATE: ${{ vars.CONTINUE_GATE || '0' }}
 
     steps:
       - name: 检出公开仓库
