@@ -30,18 +30,17 @@ jobs:
       NICUA_BATCH: ${{ secrets.NICUA_BATCH }}
       # ---- TG 用户会话注册表（setup_tg_session.py 输出）----
       TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH }}
-      TG_SESSION_KEY: ${{ secrets.TG_SESSION_KEY }}
       # ---- 代理出口（可选；URL=Secret，端口=Variables）----
       PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
       SOCKS_PORT: ${{ vars.SOCKS_PORT || '10808' }}
       # ---- 阶段 E 域名监控（开关=仓库变量 vars；URL/密码=Secrets；标签可自定义）----
-      DASHBOARD_SYNC_ENABLED: ${{ vars.DASHBOARD_SYNC_ENABLED || 'false' }}
+      DASHBOARD_SYNC_ENABLED: ${{ vars.DASHBOARD_SYNC_ENABLED || 'true' }}
       DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
       DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
       DASHBOARD_LABEL: ${{ vars.DASHBOARD_LABEL || '域名监控同步' }}
       DASHBOARD_GROUP: ${{ vars.DASHBOARD_GROUP || 'nic.ua' }}
       # ---- 阶段 F RenewHelper（开关=仓库变量 vars；URL/密码=Secrets；标签可自定义）----
-      RENEWHELPER_SYNC_ENABLED: ${{ vars.RENEWHELPER_SYNC_ENABLED || 'false' }}
+      RENEWHELPER_SYNC_ENABLED: ${{ vars.RENEWHELPER_SYNC_ENABLED || 'true' }}
       RENEWHELPER_URL: ${{ secrets.RENEWHELPER_URL }}
       RENEWHELPER_PASSWORD: ${{ secrets.RENEWHELPER_PASSWORD }}
       RENEWHELPER_LABEL: ${{ vars.RENEWHELPER_LABEL || 'RenewHelper同步' }}
