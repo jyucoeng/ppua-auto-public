@@ -17,12 +17,24 @@ jobs:
       group: ppua
       cancel-in-progress: false
     env:
-      # ---- 私有代码仓（代码 + state/ 加密状态同仓；多协作者可读但密文）----
-      APP_DIR: ppua
+      # ============================================================
+      # ★ 模型：代码仓（只读，开发者私有） + 你的私有 Gist（存 domain_phones，加密）
+      #   - PRIVATE_REPO       开发者私有代码仓地址（固定，不改）
+      #   - PRIVATE_REPO_TOKEN 开发者发的只读 Fine-grained PAT（已存在于 Secret）
+      #   - GIST_ID            你的私有 gist id（存 domain_phones）
+      #   - GIST_PAT           classic PAT（gist scope，只能写你的 gist）
+      #   - STATE_ENCRYPT_KEY  Fernet 密钥（加解密 domain_phones）
+      #   TG 会话：仅从 TG_LOGIN_BATCH(secret) 的 session 字段读取，不落仓库/Gist
+      # ============================================================
       PRIVATE_REPO: jyucoeng/ppua-auto-private
+      APP_DIR: code
+      # ---- 域名归属持久化（私有 Gist）----
+      GIST_ID: ${{ secrets.GIST_ID }}
+      GIST_PAT: ${{ secrets.GIST_PAT }}
+      STATE_ENCRYPT_KEY: ${{ secrets.STATE_ENCRYPT_KEY }}
       # ---- 账号（多账号，见 README：email,password[,tg_token,tg_chat][#白名单;...][!黑名单;...]）----
       NICUA_BATCH: ${{ secrets.NICUA_BATCH_XIONG2 }}
-      # ---- TG 用户会话注册表（setup_tg_session.py 输出）----
+      # ---- TG 用户会话注册表（setup_tg_session.py 输出，含 session 串；不落仓库）----
       TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH_XIONG2 }}
       # ---- 代理出口（可选；URL=Secret，端口=Variables）----
       PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
@@ -38,20 +50,29 @@ jobs:
       RENEWHELPER_URL: ${{ secrets.RENEWHELPER_URL }}
       RENEWHELPER_PASSWORD: ${{ secrets.RENEWHELPER_PASSWORD }}
       RENEWHELPER_LABEL: ${{ vars.RENEWHELPER_LABEL || 'RenewHelper同步' }}
-      # RenewHelper 新增服务时把域名写进 tags（标签=域名）；false 关闭
       RENEWHELPER_TAG_DOMAIN: ${{ vars.RENEWHELPER_TAG_DOMAIN || 'true' }}
-      # RenewHelper 新增服务的分组标签（tags 表达分组，默认「域名」）
       RENEWHELPER_GROUP: ${{ vars.RENEWHELPER_GROUP || '域名' }}
       # ---- 其它 ----
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'Asia/Shanghai' }}
-      # ---- 门栓：下单流程停点（默认 none=关闭门栓，直接跑完；可改 order_submit/apu_submit 等停点）----
       GATE_BEFORE: ${{ vars.GATE_BEFORE || 'none' }}
+      # 全局学习：COLLECT_TG_FOR_DOMAIN=true 时不续期只收集「域名↔归属手机号」；学全后改回 false
+      COLLECT_TG_FOR_DOMAIN: ${{ vars.COLLECT_TG_FOR_DOMAIN || 'true' }}
 
     steps:
-      - name: 检出公开仓库
+      - name: 检出触发/公开仓库
         uses: actions/checkout@v4
 
-      - name: 检出私有代码仓（含 state/，token 需有写权限用于回写）
+      - name: 校验必填配置
+        run: |
+          set -u
+          [ -n "$PRIVATE_REPO_TOKEN" ] || { echo "❌ PRIVATE_REPO_TOKEN 未配置（开发者发的只读 PAT）"; exit 1; }
+          [ -n "$GIST_ID" ]            || { echo "❌ GIST_ID 未配置（你私有 gist 的 id）"; exit 1; }
+          [ -n "$GIST_PAT" ]           || { echo "❌ GIST_PAT 未配置（classic PAT，gist scope）"; exit 1; }
+          if [ -z "$STATE_ENCRYPT_KEY" ]; then
+            echo "⚠️ STATE_ENCRYPT_KEY 未配置，domain_phones 将以明文存入 gist（不推荐）"
+          fi
+
+      - name: 检出开发者私有代码仓（只读）
         uses: actions/checkout@v4
         with:
           repository: ${{ env.PRIVATE_REPO }}
@@ -76,7 +97,7 @@ jobs:
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            pip install seleniumbase==4.54.1 pyvirtualdisplay==3.0 requests==2.34.2 telethon==1.45.0 pysocks==1.7.1 "python-socks[asyncio]==3.1.1" cryptography==50.0.1
+            pip install seleniumbase==4.54.1 pyvirtualdisplay==3.0 requests==2.34.2 telethon==1.45.0 pysocks==1.7.1 "python-socks[asyncio]==3.1.1" cryptography==50.0.1 pillow
           fi
 
       - name: 安装 sing-box（代理出口）
@@ -97,7 +118,7 @@ jobs:
           echo "随机延迟: ${delay}s"
           sleep $delay
 
-      - name: 执行 PPUA 续期
+      - name: 执行 PPUA 续期（域名归属自动写入私有 Gist）
         working-directory: ${{ env.APP_DIR }}
         run: python ppua_renew.py
 
@@ -120,34 +141,7 @@ jobs:
         run: |
           rm -rf screenshots sing-box_config.json socks5_proxy.txt proxy_result.json || true
 
-      - name: 回写私有仓 state/（TG 会话/归属/去重，加密；与代码同仓）
-        if: always()
-        working-directory: ${{ env.APP_DIR }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -z "$(git status --porcelain state/ 2>/dev/null)" ]; then
-            echo "state 无变化"
-            exit 0
-          fi
-          git add state/
-          git commit -m "同步 state: $(date +'%Y-%m-%d %H:%M:%S')" || true
-          for i in 1 2 3; do
-            if git pull --rebase origin main 2>/dev/null; then
-              if git push origin HEAD:main 2>/dev/null; then
-                echo "✅ state 已回写（第 ${i} 次成功）"
-                exit 0
-              fi
-              echo "[${i}] push 冲突，rebase 后重试"
-            else
-              echo "[${i}] pull 失败，等待重试"
-            fi
-            sleep 3
-          done
-          echo "❌ state 回写 3 次未成功，请人工处理"
-          exit 1
-
-      - name: 提交执行时间（公开仓，保 cron 存活）
+      - name: 提交执行时间（触发仓，保 cron 存活）
         if: always()
         run: |
           git config user.name "github-actions[bot]"
