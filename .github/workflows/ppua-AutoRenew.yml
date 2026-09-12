@@ -40,8 +40,8 @@ jobs:
       RENEWHELPER_LABEL: ${{ vars.RENEWHELPER_LABEL || 'RenewHelper同步' }}
       # ---- 其它 ----
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'Asia/Shanghai' }}
-      # ---- 门栓：下单流程停点（默认 apu_submit=提交 apu 激活表单前停；设 off/none 正常跑完）----
-      GATE_BEFORE: ${{ vars.GATE_BEFORE || 'apu_submit' }}
+      # ---- 门栓：下单流程停点（默认 none=关闭门栓，直接跑完；可改 order_submit/apu_submit 等停点）----
+      GATE_BEFORE: ${{ vars.GATE_BEFORE || 'none' }}
 
     steps:
       - name: 检出公开仓库
