@@ -1,15 +1,11 @@
-# PPUA AutoRenew
-
-自动完成 **NIC.UA `.pp.ua` 域名**的免费续期 + 激活 + 监控同步，支持**多账号**，可在 GitHub Actions 上定时无人值守运行。
-
-需求与完整设计见 [REQUIREMENTS.md](./REQUIREMENTS.md)。
+# PUA
 
 ---
 
 ## 运行流程
 
 ```
-[P] 代理出口（可选）→ [A] NIC.UA 登录 → 检查域名列表（Renew 可用 / 已有 "Activation is required"）
+[P] 代理出口（可选）→ [A] 网站 登录 → 检查域名列表（Renew 可用 / 已有 "Activation is required"）
     → 待激活域名【跳过下单，直接激活】；待续期域名走完整下单 → 获取 Payer 联系人
     → 校验手机号在 /en/my/contacts → [G] TG 预检门（用 Payer 手机号探活并比对）
     → 加入购物车（校验 0.00₴）→ 选择已保存联系人 → 提交免费订单
@@ -276,87 +272,3 @@ d@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2
 
 ---
 
-## 手动触发（workflow_dispatch）
-
-定时：默认**每月 1 日 00:43 UTC**（`.pp.ua` 按年度续期，月频足够）。可改 `ppua-AutoRenew.yml` 的 `cron`；
-也可随时用 `workflow_dispatch` 手动触发。
-
----
-
-## 报告模板（TG 通知）
-
-```text
-【单域名单条】
-🎮 PPUA 续期报告
-🕐 运行时间: 2026-09-11 12:31:57 (Asia/Shanghai)
-🕐 运行时间: 2026-09-11 04:31:57 (UTC)
-🌐 IP 信息: 185.156.53.*** (UA) [✅ 代理]
-👤 账号: z******t@g***l.com          ← 域名也掩码，TG 不会自动加邮箱链接
-
-🖥️ 域名: example1.pp.ua
-✈️ tg账号: +4475****9202
-⏰ 到期时间(前): 2027-01-02
-⏰ 到期时间(后): 2028-01-02
-✅ 续期成功
-❌ 续期失败 / 原因：{errorReason}   (失败时)
-📊 域名监控同步✅更新              (阶段 E 启用时，已压缩)
-📊 RenewHelper同步✅新增            (阶段 F 启用时，已压缩)
-```
-
-> **多域名合并**：同一通知渠道下多个域名（成功/失败）处理后合并成 1~N 条，头一致 +
-> `📦 本次处理 N 个域名（成功 X / 失败 Y）`，逐域名按块列出；超长自动拆条，标题带进度 `（合并 1/2）`。
->
-> **域名列表截图**：每个账号处理完后单独发一张 Pillow 绘制的 PNG 长图
-> （账号置顶 + 域名/到期逐行，域名再多也整张显示）。
->
-> **成功判定**：`apu.drs.ua` 出现 `Done! …activated and ready to use` 即视为成功；
-> 新到期日在该账号全部域名处理完后批量回读（60s 首等 + 至多 3 轮×60s，只读到期日，
-> 忽略 Activation 标签滞后），读不到用「旧到期+365」预期兜底，不误判失败。
-
-> **续期规则**：pp.ua 免费续期是**在原到期日基础上 +365 天**（不是"今天 +365"）。
-> 例如原本 `02 Jan 2027`，激活/续期成功后 → `02 Jan 2028`；跨闰年实际可能 +366 天，
-> 因此代码以「到期日增长 ≥360 天」确认新到期日（见 §7 阶段 D）。
-
-> 手机号掩码显示的是**本次激活用到的 TG 手机号**（`get_me().phone`，为空时用注册表兜底），
-> 可顺带校验本次用的手机号是否与 Payer 一致。
-
----
-
-## 架构要点（详见 REQUIREMENTS.md）
-
-- **代理前置**：登录 nic.ua 前先起代理，全部动作 A~F 都走它（规避数据中心 IP 风控）。
-- **TG 预检门**：下单前用 Payer 手机号探活 TG 会话（`get_me()` + 手机号比对；`get_me().phone` 偶尔
-  为空时用 `TG_LOGIN_BATCH` 注册表手机号兜底），失败即通知并终止，不产生任何订单副作用。
-- **归属学习 + 自动切换**：若 `@ppuabot` 回复 "can be activated by X only, but you act as Y"，
-  即获权威归属手机号 X → 记入 `state/domain_phones.json`（下次预检直接用），并在本次运行里
-  **自动换成 X 的会话重试激活**。
-- **待激活域名**：行上已有 "Activation is required" 的域名（人工/上次已完成下单）会被识别，
-  跳过下单直接激活。
-- **会话自治**：Telethon 连接按需各建一次——TG 预检门探活（`tg_probe`）与激活对话（`_activate_flow`，
-  @ppuabot 提取验证码）各建立/断开一次；会话本身无 TTL，靠月度运行保持活跃，失效时配 `TG_LOGIN_BATCH`
-  里该手机号行重登（账号级事件才可能需人工重预授权）。
-- **状态回写**：TG 会话/归属/去重**加密后放私有代码仓 `state/`**（只 2 个仓），每次运行 git 回写；
-  `concurrency` + rebase 重试防并发。
-- **审计**：每个关键检查点用 `snapshot()` 同时保存 **HTML dump + 截图**（含 apu 提交后下一页），
-  随 `upload-artifact` 打包归档；失败必推 TG。
-
-## 已知边界（诚实声明）
-
-- nic.ua / apu.drs.ua 的**选择器可能随改版失效**：全部集中在 `ppua_renew.py` 顶部 `SEL` 与 URL 常量，
-  改一行适配；建议观察月度运行日志提前暴露。
-- `@ppuabot` 为第三方 bot，提示语变化会导致激活失败（预检门会提前报警；"can be activated by X only"
-  提示还会被用作归属学习+自动切换）。
-- **apu.drs.ua 有 Cloudflare Turnstile（隐形模式）**：Continue 初始 disabled，等 Turnstile 后台自动
-  验证通过、按钮解除 disabled 后才点击提交（不再用 `uc_gui_click_captcha`）；提交后检测
-  `Done! ... activated and ready to use` 判定激活成功。
-- **联系人归档**：若 Payer 联系人被归档，详情页显示「Restore from archive」——脚本会自动点击恢复并
-  重新打开详情页继续流程；「Archive this contact」=正常状态，无需处理。
-- pp.ua 免费续期政策不受控；金额校验前置会在"收费化"时停止并告警。
-- `expiry_before`（到期时间前）字段当前为尽力求取，读不到显示 `-`；报告不再输出「续期时间」行。
-
----
-
-## 说明
-
-需求、论证、验证清单见 [REQUIREMENTS.md](./REQUIREMENTS.md)（16 章）。实现基于框架
-`ppua_renew.py`（seleniumbase + telethon + requests）与 `ppua-AutoRenew.yml` 骨架，按文档 §16 映射改造。

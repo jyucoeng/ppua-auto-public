@@ -1,4 +1,4 @@
-# PPUA — 使用与权限配置说明
+# PUA — 使用与权限配置说明
 
 本仓库是一个**模板**：workflow 用「**代码仓（只读） + 你的私有 Gist**」模型——
 你的 TG 会话只从 Secret 读取、不入仓库；域名归属手机号(`domain_phones`)加密后存进**你自己的私有 Gist**。
@@ -106,5 +106,4 @@ python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).de
 ## 6. 安全提醒
 - **Gist 必须私有**；`GIST_PAT` 也要只写你自己的 gist。
 - 会话在 Secrets，不进仓库/Gist；domain_phones 进 Gist 前按 `STATE_ENCRYPT_KEY` 加密。
-- 截图与 HTML dump 只作为 Actions artifact（400 天）；域名列表截图（含明文账号/手机号）发送成功后会立即删除，也不会上传。
 - 换 `STATE_ENCRYPT_KEY` 会让旧 Gist 内容解不开；谨慎轮换。
