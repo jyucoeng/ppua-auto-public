@@ -1,4 +1,4 @@
-# PPUA AutoRenew
+# PPUA
 
 自动完成 **NIC.UA `.pp.ua` 域名**的免费续期 + 激活 + 监控同步，支持**多账号**，可在 GitHub Actions 上定时无人值守运行。
 
