@@ -28,6 +28,7 @@ jobs:
       # ============================================================
       PRIVATE_REPO: jyucoeng/ppua-auto-private
       APP_DIR: code
+      PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
       # ---- 域名归属持久化（私有 Gist）----
       GIST_ID: ${{ secrets.GIST_ID }}
       GIST_PAT: ${{ secrets.GIST_PAT }}
