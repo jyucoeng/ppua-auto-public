@@ -123,11 +123,11 @@ jobs:
           echo "随机延迟: ${delay}s"
           sleep $delay
 
-      - name: 执行 PPUA 续期（域名归属自动写入私有 Gist）
+      - name: 执行 PPUA 续期
         working-directory: ${{ env.APP_DIR }}
         run: python ppua_renew.py
 
-      - name: 上传审计产物（HTML/截图/代理配置）
+      - name: 上传审计产物
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -146,7 +146,7 @@ jobs:
         run: |
           rm -rf screenshots sing-box_config.json socks5_proxy.txt proxy_result.json || true
 
-      - name: 提交执行时间（触发仓，保 cron 存活）
+      - name: 提交执行时间
         if: always()
         run: |
           git config user.name "github-actions[bot]"
@@ -167,5 +167,5 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           delete_workflow_pattern: ${{ github.workflow }}
-          retain_days: 14
-          keep_minimum_runs: 5
+          retain_days: 1
+          keep_minimum_runs: 2
