@@ -1,4 +1,4 @@
-# PPUA AutoRenew — 使用与权限配置说明
+# PPUA — 使用与权限配置说明
 
 本仓库是一个**模板**：workflow 用「**代码仓（只读） + 你的私有 Gist**」模型——
 你的 TG 会话只从 Secret 读取、不入仓库；域名归属手机号(`domain_phones`)加密后存进**你自己的私有 Gist**。
