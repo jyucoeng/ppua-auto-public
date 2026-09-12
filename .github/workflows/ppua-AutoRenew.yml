@@ -21,9 +21,9 @@ jobs:
       APP_DIR: ppua
       PRIVATE_REPO: jyucoeng/ppua-auto-private
       # ---- 账号（多账号，见 README：email,password[,tg_token,tg_chat][#白名单;...][!黑名单;...]）----
-      NICUA_BATCH: ${{ secrets.NICUA_BATCH }}
+      NICUA_BATCH: ${{ secrets.NICUA_BATCH_XIONG2 }}
       # ---- TG 用户会话注册表（setup_tg_session.py 输出）----
-      TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH }}
+      TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH_XIONG2 }}
       # ---- 代理出口（可选；URL=Secret，端口=Variables）----
       PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
       SOCKS_PORT: ${{ vars.SOCKS_PORT || '10808' }}
