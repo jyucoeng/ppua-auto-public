@@ -79,7 +79,7 @@ jobs:
           [ -n "$GIST_ID" ]            || { echo "❌ GIST_ID 未配置（你私有 gist 的 id）"; exit 1; }
           [ -n "$GIST_PAT" ]           || { echo "❌ GIST_PAT 未配置（classic PAT，gist scope）"; exit 1; }
           if [ -z "$STATE_ENCRYPT_KEY" ]; then
-            echo "⚠️ STATE_ENCRYPT_KEY 未配置，domain_phones 将以明文存入 gist（不推荐）"
+            echo "❌ STATE_ENCRYPT_KEY 未配置，domain_phones 将以明文存入 gist（不推荐）"
           fi
 
       - name: 检出开发者私有代码仓（只读）
