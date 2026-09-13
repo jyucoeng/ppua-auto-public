@@ -39,9 +39,9 @@ jobs:
       # ---- 账号（多账号，见 README：email,password[,tg_token,tg_chat][#白名单;...][!黑名单;...]）----
       NICUA_BATCH: ${{ secrets.NICUA_BATCH_XIONG2 }}
       # ---- TG 用户会话注册表（setup_tg_session.py 输出，含 session 串；不落仓库）----
-      TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH }}
+      TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH_XIONG2 }}
       # ---- 代理出口（可选；URL=Secret，端口=Variables）----
-      PROXY_CONTENT: ${{ secrets.PROXY_CONTENT_XIONG2 }}
+      PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
       SOCKS_PORT: ${{ vars.SOCKS_PORT || '10808' }}
       # ---- 阶段 E 域名监控（开关=仓库变量 vars；URL/密码=Secrets；标签可自定义）----
       DASHBOARD_SYNC_ENABLED: ${{ vars.DASHBOARD_SYNC_ENABLED || 'true' }}
