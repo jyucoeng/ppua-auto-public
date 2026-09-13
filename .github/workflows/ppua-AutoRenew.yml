@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     concurrency:
-      group: ppua
-      cancel-in-progress: false
+      group: ppua # 这里如果部署多个yml,也要修改这里
+      cancel-in-progress: true
     env:
       # ============================================================
       # ★ 模型：代码仓（只读，开发者私有） + 你的私有 Gist（存 domain_phones，加密）
@@ -31,17 +31,17 @@ jobs:
       PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
       # ---- 域名归属持久化（私有 Gist）----
       GIST_ID: ${{ vars.GIST_ID || '0d6c6b5025840f15493fb70539dfe57d' }}
-      # ⚠️ 上面的 GIST_ID 是作者自己的私有 gist，**使用者不要照抄**！请创建你自己的私有 gist
+      # ⚠️ 上面的 GIST_ID 是作者自己的私有 gist，**使用者不要照抄**！请创建你自己的私有 gist，每一个yml都需要不一样的 GIST_ID
       #    （gist.github.com → Create secret gist → 文件 domain_phones.json → 内容 {}），
       #    把 URL 末尾的 id 填到你自己仓库的 Variables → GIST_ID 覆盖。
       GIST_PAT: ${{ secrets.GIST_PAT }}                    # Secret：classic PAT(gist scope)
       STATE_ENCRYPT_KEY: ${{ secrets.STATE_ENCRYPT_KEY }}
       # ---- 账号（多账号，见 README：email,password[,tg_token,tg_chat][#白名单;...][!黑名单;...]）----
-      NICUA_BATCH: ${{ secrets.NICUA_BATCH }}
+      NICUA_BATCH: ${{ secrets.NICUA_BATCH_XIONG2 }}
       # ---- TG 用户会话注册表（setup_tg_session.py 输出，含 session 串；不落仓库）----
       TG_LOGIN_BATCH: ${{ secrets.TG_LOGIN_BATCH }}
       # ---- 代理出口（可选；URL=Secret，端口=Variables）----
-      PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
+      PROXY_CONTENT: ${{ secrets.PROXY_CONTENT_XIONG2 }}
       SOCKS_PORT: ${{ vars.SOCKS_PORT || '10808' }}
       # ---- 阶段 E 域名监控（开关=仓库变量 vars；URL/密码=Secrets；标签可自定义）----
       DASHBOARD_SYNC_ENABLED: ${{ vars.DASHBOARD_SYNC_ENABLED || 'true' }}
