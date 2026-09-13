@@ -60,8 +60,8 @@ jobs:
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'Asia/Shanghai' }}
       GATE_BEFORE: ${{ vars.GATE_BEFORE || 'none' }}
       # 全局学习：COLLECT_TG_FOR_DOMAIN=true 时不续期只收集「域名↔归属手机号」；
-      # 「域名↔手机号」映射只需要全局学习**一次**。学全后改回 false，关闭本收集（默认 false）
-      COLLECT_TG_FOR_DOMAIN: ${{ vars.COLLECT_TG_FOR_DOMAIN || 'true' }}
+      # 「域名↔手机号」映射只需要全局学习**一次**。改成true学全后改回 false，关闭本收集（默认 false 关闭）
+      COLLECT_TG_FOR_DOMAIN: ${{ vars.COLLECT_TG_FOR_DOMAIN || 'false' }}
 
     steps:
       - name: 检出触发/公开仓库
