@@ -44,12 +44,14 @@ jobs:
       PROXY_CONTENT: ${{ secrets.PROXY_CONTENT }}
       SOCKS_PORT: ${{ secrets.SOCKS_PORT || '10808' }}
       # ---- 阶段 E 域名监控（开关/标签=Secrets 可自定义带默认值；URL/密码=Secrets）----
+      # DASHBOARD_SYNC_ENABLED=true=--开启阶段 E 域名监控，关闭用false
       DASHBOARD_SYNC_ENABLED: ${{ secrets.DASHBOARD_SYNC_ENABLED || 'true' }}
       DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
       DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
       DASHBOARD_LABEL: ${{ secrets.DASHBOARD_LABEL || '域名监控同步' }}
       DASHBOARD_GROUP: ${{ secrets.DASHBOARD_GROUP || 'nic.ua' }}
       # ---- 阶段 F RenewHelper（开关/标签=Secrets 可自定义带默认值；URL/密码=Secrets）----
+      # RENEWHELPER_SYNC_ENABLED=true=--开启阶段 F RenewHelper，关闭用false
       RENEWHELPER_SYNC_ENABLED: ${{ secrets.RENEWHELPER_SYNC_ENABLED || 'true' }}
       RENEWHELPER_URL: ${{ secrets.RENEWHELPER_URL }}
       RENEWHELPER_PASSWORD: ${{ secrets.RENEWHELPER_PASSWORD }}
