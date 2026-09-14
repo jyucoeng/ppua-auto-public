@@ -25,31 +25,31 @@
 
 在仓库 **Settings → Secrets and variables → Actions** 配置；**Secrets** 存敏感值，**Variables** 存可公开配置。
 
-| 类型 | 变量 | 是否必填 | 说明 |
-|---|---|---|---|
-| **Secret** | `NICUA_BATCH` | ✅ 必填 | 支持多账号详见 NICUA_BATCH 示例 |
-| **Secret** | `TG_LOGIN_BATCH` | ✅ 必填 | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`;用`setup_tg_session.py` 输出 |
-| **Secret** | `PRIVATE_REPO_TOKEN` | ✅ 必填 | **只读** Fine-grained PAT，检出开发者私有代码仓；创建位置/权限见下方旧章节（只读即可，不再用于回写 state） |
-| **Secret** | `GIST_ID` | ✅ 必填 | 你的私有 gist 的 id（存 domain_phones）；创建方法见下方 |
-| **Secret** | `GIST_PAT` | ✅ 必填 | **classic PAT（gist scope）**，代码用它读写你的私有 gist |
-| **Secret** | `STATE_ENCRYPT_KEY` | ✅ 推荐 | 状态加密 **Fernet key**；生成方法见下方；一共44个字符 |
-| **Secret** | `PROXY_CONTENT` | ✅ 推荐 | 代理 URL（推荐填写）；留空=直连 |
-| **Secret** | `DASHBOARD_URL` | ✅ 阶段E启用时必填 | 域名监控地址（开源：[CF-Domain-AutoCheck](https://github.com/decadefaiz/CF-Domain-AutoCheck)） |
-| **Secret** | `DASHBOARD_PASSWORD` | ✅ 阶段E启用时必填 | 域名监控密码 |
-| **Secret** | `RENEWHELPER_URL` | ✅ 阶段F启用时必填 | RenewHelper 地址（开源：[renewhelper](https://github.com/ieax/renewhelper)） |
-| **Secret** | `RENEWHELPER_PASSWORD` | ✅ 阶段F启用时必填 | RenewHelper 密码 |
-| **Variable** | `DASHBOARD_SYNC_ENABLED` | 可选 | `true` 启用阶段 E（workflow 默认 `true`） |
-| **Variable** | `DASHBOARD_LABEL` | 可选 | 报告标签（阶段 E），默认 `域名监控同步` |
-| **Variable** | `DASHBOARD_GROUP` | 可选 | 域名监控写入的 `registrar` 分组名，默认 `nic.ua` |
-| **Variable** | `RENEWHELPER_SYNC_ENABLED` | 可选 | `true` 启用阶段 F（workflow 默认 `true`） |
-| **Variable** | `RENEWHELPER_LABEL` | 可选 | 报告标签（阶段 F），默认 `RenewHelper同步` |
-| **Variable** | `RENEWHELPER_TAG_DOMAIN` | 可选 | RenewHelper 新增服务时把域名写进 `tags`（标签=域名），默认 `true` |
-| **Variable** | `RENEWHELPER_GROUP` | 可选 | RenewHelper 新增服务的分组标签（tags 表达），默认 `域名` |
-| **Variable** | `SOCKS_PORT` | 可选 | 本地 socks5 端口，默认 `10808` |
-| **Variable** | `GATE_BEFORE` | 可选 | 下单流程「门栓」：**默认 `none`（关闭，跑完全程）**。传 step_id 可在该步前 快照+退出 方便校对：`renew_click` / `cart_clean` / `cart_continue` / `contact_select` / `order_submit` / `tg_activation` / `apu_submit`；设 `off` 或 `none` = 关闭（正常跑完） |
-| **Variable** | `APP_TIMEZONE` | 可选 | 报告时区，默认 `Asia/Shanghai` |
-| **Variable**| `COLLECT_TG_FOR_DOMAIN` | ✅ 必填|首次先用 `true` 学一次，跑完改回 `false`，这个参数很重要，只有改为true运行一次之后，并且`SHOW_DOMAIN_LIST=true` 才会把这个域名对应的Phone给查询并且列出来，否则用 `- `替代 |
-| **Variable**| `SHOW_DOMAIN_LIST` |✅ 必填|为 `true` 代表要启用域名列表消息/截图发送到tg消息，你可以自行去看一下true/false的区别|
+| 变量 | 是否必填 | 说明 |
+|---|---|---|
+| `NICUA_BATCH` | ✅ | 支持多账号详见 NICUA_BATCH 示例 |
+| `TG_LOGIN_BATCH` | ✅ | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`;用`setup_tg_session.py` 输出 |
+| `PRIVATE_REPO_TOKEN` | ✅ | **只读** Fine-grained PAT，检出开发者私有代码仓；创建位置/权限见下方旧章节（只读即可，不再用于回写 state） |
+| `GIST_ID` | ✅ | 你的私有 gist 的 id（存 domain_phones）；创建方法见下方 |
+| `GIST_PAT` | ✅ | **classic PAT（gist scope）**，代码用它读写你的私有 gist |
+| `STATE_ENCRYPT_KEY` | ✅ | 状态加密 **Fernet key**；生成方法见下方；一共44个字符 |
+| `PROXY_CONTENT` | ✅ | 代理 URL（推荐填写）；留空=直连 |
+| `DASHBOARD_URL` | ✅ | 域名监控地址（开源：[CF-Domain-AutoCheck](https://github.com/decadefaiz/CF-Domain-AutoCheck)）安了这一个项目才需要填，同时 `DASHBOARD_SYNC_ENABLED=true` |
+| `DASHBOARD_PASSWORD` | ✅ | 域名监控密码 |
+| `RENEWHELPER_URL` | ✅ | RenewHelper 地址（开源：[renewhelper](https://github.com/ieax/renewhelper)） 安了这个项目才需要填，同时  `RENEWHELPER_SYNC_ENABLED=true` |
+| `RENEWHELPER_PASSWORD` | ✅ | RenewHelper 密码 |
+| `DASHBOARD_SYNC_ENABLED` | - | `true` 启用阶段 E（workflow 默认 `true`） |
+| `DASHBOARD_LABEL` | - | 报告标签（阶段 E），默认 `域名监控同步` |
+| `DASHBOARD_GROUP` | - | 域名监控写入的 `registrar` 分组名，默认 `nic.ua` |
+| `RENEWHELPER_SYNC_ENABLED` | - | `true` 启用阶段 F（workflow 默认 `true`） |
+| `RENEWHELPER_LABEL` | - | 报告标签（阶段 F），默认 `RenewHelper同步` |
+| `RENEWHELPER_TAG_DOMAIN` | - | RenewHelper 新增服务时把域名写进 `tags`（标签=域名），默认 `true` |
+| `RENEWHELPER_GROUP` | - | RenewHelper 新增服务的分组标签（tags 表达），默认 `域名` |
+| `SOCKS_PORT` | - | 本地 socks5 端口，默认 `10808` |
+| `GATE_BEFORE` | - | 下单流程「门栓」：**默认 `none`（关闭，跑完全程）**。传 step_id 可在该步前 快照+退出 方便校对：`renew_click` / `cart_clean` / `cart_continue` / `contact_select` / `order_submit` / `tg_activation` / `apu_submit`；设 `off` 或 `none` = 关闭（正常跑完） |
+| `APP_TIMEZONE` | - | 报告时区，默认 `Asia/Shanghai` |
+| `COLLECT_TG_FOR_DOMAIN` | ✅ | 首次先用 `true` 学一次，跑完改回 `false`，这个参数很重要，只有改为true运行一次之后，并且`SHOW_DOMAIN_LIST=true` 才会把这个域名对应的Phone给查询并且列出来，否则用 `- `替代 |
+| `SHOW_DOMAIN_LIST` | ✅ | 为 `true` 代表要启用域名列表消息/截图发送到tg消息，你可以自行去看一下true/false的区别 |
 
 > 通知分流：报告按**归属手机号**发 → `TG_LOGIN_BATCH` 该手机号行的 `notify_bot_token/notify_chat_id`（缺省回退 `NICUA_BATCH` 账号级）。
 
