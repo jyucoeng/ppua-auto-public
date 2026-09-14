@@ -23,7 +23,7 @@
 
 ## 环境变量配置（总清单）
 
-在仓库 **Settings → Secrets and variables → Actions** 配置；**Secrets** 存敏感值，**Variables** 存可公开配置。
+在仓库 **Settings → Secrets and variables → Actions** 配置；**Secrets** ，能直接写在yml里的值都代表非敏感数据。
 
 | 变量 | 是否必填 | 说明 |
 |---|---|---|
