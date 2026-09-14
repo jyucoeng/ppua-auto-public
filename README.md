@@ -28,7 +28,7 @@
 | 类型 | 变量 | 是否必填 | 说明 |
 |---|---|---|---|
 | **Secret** | `NICUA_BATCH` | ✅ 必填 | 支持多账号详见 NICUA_BATCH 示例 |
-| **Secret** | `TG_LOGIN_BATCH` | ✅ 必填 | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`；用`setup_tg_session.py` 输出 |
+| **Secret** | `TG_LOGIN_BATCH` | ✅ 必填 | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`;用`setup_tg_session.py` 输出 |
 | **Secret** | `PRIVATE_REPO_TOKEN` | ✅ 必填 | **只读** Fine-grained PAT，检出开发者私有代码仓；创建位置/权限见下方旧章节（只读即可，不再用于回写 state） |
 | **Secret** | `GIST_ID` | ✅ 必填 | 你的私有 gist 的 id（存 domain_phones）；创建方法见下方 |
 | **Secret** | `GIST_PAT` | ✅ 必填 | **classic PAT（gist scope）**，代码用它读写你的私有 gist |
@@ -248,6 +248,6 @@ d@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2
    ```
    把输出的完整行**存入 `TG_LOGIN_BATCH`**（session 字段不能留空，否则程序缺少 TG 会话无法预检/激活）。
 
-   4、确保yml中 COLLECT_TG_FOR_DOMAIN 和 SHOW_DOMAIN_LIST都要改成true，等tg中收到域名列表的截图，这个截图的phone一栏会被正常的手机号填充，然后yml再把 COLLECT_TG_FOR_DOMAIN 改回false。
+   4、确保yml中 COLLECT_TG_FOR_DOMAIN 和 SHOW_DOMAIN_LIST都要改成true，等tg中收到域名列表的截图，这个截图的phone一栏会被正常的手机号填充，然后你自己去yml再把 COLLECT_TG_FOR_DOMAIN 改回false。
 ---
 
