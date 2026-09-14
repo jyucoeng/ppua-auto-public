@@ -27,13 +27,13 @@
 
 | 类型 | 变量 | 是否必填 | 说明 |
 |---|---|---|---|
-| **Secret** | `NICUA_BATCH` | ✅ 必填 | 多账号：`email,password[,tg_token,tg_chat][#白名单|...][!黑名单|...]`；详见 NICUA_BATCH 示例 |
-| **Secret** | `TG_LOGIN_BATCH` | ✅ 必填 | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`；`setup_tg_session.py` 输出 |
+| **Secret** | `NICUA_BATCH` | ✅ 必填 | 支持多账号详见 NICUA_BATCH 示例 |
+| **Secret** | `TG_LOGIN_BATCH` | ✅ 必填 | TG 用户会话+每手机号通知：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`；用`setup_tg_session.py` 输出 |
 | **Secret** | `PRIVATE_REPO_TOKEN` | ✅ 必填 | **只读** Fine-grained PAT，检出开发者私有代码仓；创建位置/权限见下方旧章节（只读即可，不再用于回写 state） |
 | **Secret** | `GIST_ID` | ✅ 必填 | 你的私有 gist 的 id（存 domain_phones）；创建方法见下方 |
 | **Secret** | `GIST_PAT` | ✅ 必填 | **classic PAT（gist scope）**，代码用它读写你的私有 gist |
 | **Secret** | `STATE_ENCRYPT_KEY` | ✅ 推荐 | 状态加密 **Fernet key**；生成方法见下方；一共44个字符 |
-| **Secret** | `PROXY_CONTENT` | 可选 | 代理 URL（推荐填写）；留空=直连 |
+| **Secret** | `PROXY_CONTENT` | ✅ 推荐 | 代理 URL（推荐填写）；留空=直连 |
 | **Secret** | `DASHBOARD_URL` | ✅ 阶段E启用时必填 | 域名监控地址（开源：[CF-Domain-AutoCheck](https://github.com/decadefaiz/CF-Domain-AutoCheck)） |
 | **Secret** | `DASHBOARD_PASSWORD` | ✅ 阶段E启用时必填 | 域名监控密码 |
 | **Secret** | `RENEWHELPER_URL` | ✅ 阶段F启用时必填 | RenewHelper 地址（开源：[renewhelper](https://github.com/ieax/renewhelper)） |
@@ -48,6 +48,8 @@
 | **Variable** | `SOCKS_PORT` | 可选 | 本地 socks5 端口，默认 `10808` |
 | **Variable** | `GATE_BEFORE` | 可选 | 下单流程「门栓」：**默认 `none`（关闭，跑完全程）**。传 step_id 可在该步前 快照+退出 方便校对：`renew_click` / `cart_clean` / `cart_continue` / `contact_select` / `order_submit` / `tg_activation` / `apu_submit`；设 `off` 或 `none` = 关闭（正常跑完） |
 | **Variable** | `APP_TIMEZONE` | 可选 | 报告时区，默认 `Asia/Shanghai` |
+| **Variable**| `COLLECT_TG_FOR_DOMAIN` | ✅ 必填|首次先用 `true` 学一次，跑完改回 `false`，这个参数很重要，只有改为true运行一次之后，并且`SHOW_DOMAIN_LIST=true` 才会把这个域名对应的Phone给查询并且列出来，否则用 `- `替代 |
+| **Variable**| `SHOW_DOMAIN_LIST` |✅ 必填|为 `true` 代表要启用域名列表消息/截图发送到tg消息，你可以自行去看一下true/false的区别|
 
 > 通知分流：报告按**归属手机号**发 → `TG_LOGIN_BATCH` 该手机号行的 `notify_bot_token/notify_chat_id`（缺省回退 `NICUA_BATCH` 账号级）。
 
@@ -84,41 +86,17 @@ python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).de
 > 一句话：`GIST_ID` 告诉代码「读写哪个 gist」，`GIST_PAT` 是访问它的钥匙；两者都要是你自己的。
 > Gist 内容会先经 `STATE_ENCRYPT_KEY` 加密（`enc:`），拿到 gist 也看不到明文手机号。
 
-### Gist 读写流程（domain_phones 怎么往返）
+> ⚠️ **并发注意**：Gist 的 `PATCH` 是**整文件替换**。所以你如果复制了多个yml运行，你需要每个yml都要配不一样的**Gist ID**
 
-`domain_phones`(**域名↔激活归属手机号**)的持久化**全程走 GitHub API，不落地本地文件**：
-
-```
-运行中 load_domain_phones(email)  = GET  /gists/{GIST_ID}
-                                    → files['domain_phones.json'].content
-                                    → 解密(enc:) → 内存 dict → 取该账号映射
-账号收尾 flush_pending_domain_phones = 合并本次学习进内存 dict
-                                    → 整份 PATCH /gists/{GIST_ID}
-                                    → content = STATE_ENCRYPT_KEY 加密后的新 JSON
-```
-
-- **单一数据源**：gist 就是唯一真值，本地 `state/`（`STATE_DIR`）只在**未配置 Gist 时**做本地兜底，不产生文件分叉；
-- 读：一次 `GET` 全量进内存；写：整个 gist 重建后一次 `PATCH`；
-- 内容始终 `enc:` 加密存储；多账号映射共用一个 gist（按账号邮箱分键），每账号只在收尾时写回。
-
-> ⚠️ **并发注意**：Gist 的 `PATCH` 是**整文件替换**。若你同时跑多个 workflow 且**共用同一个 `GIST_ID`**，
-> 后写的会整份覆盖先写的（丢更新）。代码已做「**写前重读 + 写后校验告警**」缓解，但**并发流请各自用不同的
-> `GIST_ID`**（一个并发写入流 = 一个私有 gist）做物理隔离；同一仓库多个 workflow 也可用相同
-> `concurrency.group` 串行化。
-
-> REQUIREMENTS 对应章节：§「状态持久化（Gist）」。
 
 ### 必填
 
 | Secret | 说明 |
 |---|---|
-| `NICUA_BATCH` | **多账号**。每行 `email,password[,tg_notify_token,tg_notify_chat][#白名单|...][!黑名单|...]`。<br>`#`=账号级白名单（只处理这些域名）、`!`=账号级黑名单（排除这些），名单内多个域名用 **`|` 竖线** 分隔、均可选可单用；账号级优先，未配回退全局名单；多行=多账号；**名单同时约束「续期下单」与「待激活」两个阶段**（Activation is required 的域名同样先过名单，黑名单/不在白名单的待激活域名不会被执行激活）；示例见下 |
-| `TG_LOGIN_BATCH` | **TG 用户会话 + 每手机号通知** 注册表（`setup_tg_session.py` 输出格式）：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`，分号/换行分隔多账号。**session 必须先手动跑一次 `setup_tg_session.py` 生成并填入**（`state/tg_<phone>.session` 是运行时自动回写的持久化文件，不是初次配置方式）；**该行的 notify_bot_token/notify_chat_id 用于给该手机号所有者发报告**（同一账号挂了别人的域名时，通知正确分流） |
+| `NICUA_BATCH` | **多账号**。每行 `email,password[,tg_notify_token,tg_notify_chat][#白名单|白名单1｜...][!黑名单|黑名单1｜...];email1,password1[,tg_notify_token1,tg_notify_chat1][#email1的白名单|email1的白名单1｜...][!email1的黑名单|email1的黑名单1｜...]`>`#`=账号级白名单（只处理这些域名）、`!`=账号级黑名单（排除这些），名单内多个域名用 **`|` 竖线** 分隔、均可选可单用；多账号用分号隔开，也就是如果有黑白名单就在黑白名单加分号，然后开始下一个账号；**名单同时约束「续期下单」与「待激活」两个阶段**（Activation is required 的域名同样先过名单，黑名单/不在白名单的待激活域名不会被执行激活）；示例见下 |
+| `TG_LOGIN_BATCH` | **TG 用户会话 + 每手机号通知** 注册表（`setup_tg_session.py` 输出格式）：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`，分号分隔多账号。**session 必须先手动跑一次 `setup_tg_session.py` 生成并填入**（；**该行的 notify_bot_token/notify_chat_id 用于给该手机号所有者发报告**（同一账号挂了别人的域名时，通知正确分流） |
 | `PRIVATE_REPO_TOKEN` | ⚠️ 当前用途：**只读**检出开发者私有代码仓（不再回写 state）。持久化已改为 私有 Gist(`GIST_ID`/`GIST_PAT`) + `STATE_ENCRYPT_KEY` 加密，见上方 [环境变量配置总清单](#环境变量配置总清单) 与新章节 |
 
-> **报告通知发给谁**：按**域名归属手机号**取 `TG_LOGIN_BATCH` 对应行的 `notify_bot_token/notify_chat_id`；
-> 该行没配，才回退用 `NICUA_BATCH` 账号级 `tg_notify_token/tg_notify_chat`。这样同一 NIC.UA 账号下的
-> 别人域名，报告会发给各自归属者，而不是都发给自己。
 
 #### TG 相关变量从哪来（`TG_LOGIN_BATCH`）
 
@@ -176,6 +154,10 @@ c@gmail.com,Pass3!retire-me.pp.ua|old2.pp.ua
 # 生效结果：白名单 {example1, example2, keep} − 黑名单 {example2, skip}
 #          = 实际只处理 example1、keep
 d@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2.pp.ua|skip.pp.ua
+
+# 多账号
+账号1@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2.pp.ua|skip.pp.ua;账号2@gmail.com,Pass2,token2,chat2#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2.pp.ua|skip.pp.ua;
+
 ```
 
 - 一句话语义：**白名单=入围，黑名单=出局**；都有时 = 先按白名单锁定，再剔掉黑名单里的
@@ -227,8 +209,7 @@ d@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2
 | Secret | `RENEWHELPER_PASSWORD` | 独立密码 |
 | Variables | `RENEWHELPER_LABEL` | 报告标签，默认 `RenewHelper同步` |
 
-> 开关 / 时区不是机密，放 **仓库 Variables**（Settings → Secrets and variables → Variables），
-> 协作者可直接改而不用碰 Secrets。
+> 阶段E/F同时支持多个域名合并，比如你要是写了 域名A  aaa.pp.ua,域名B bbb.pp.ua  这里多域名用逗号分割，代表这2个域名都是同一天到期，这种场景的域名也可以被正常识别到，续期成功时，也会正常更新最新到期时间到域名监控项目中。
 
 ### 其它
 
@@ -266,9 +247,7 @@ d@gmail.com,Pass4,token4,chat4#example1.pp.ua|example2.pp.ua|keep.pp.ua!example2
    # 按提示输入验证码；输出完整 TG_LOGIN_BATCH 行（含补全后的 session）
    ```
    把输出的完整行**存入 `TG_LOGIN_BATCH`**（session 字段不能留空，否则程序缺少 TG 会话无法预检/激活）。
-4. **（可选）确认代理**：`PROXY_CONTENT` 填一个可用节点。
-5. **手动触发一次**：Actions 里 `Run workflow` 直接运行（已去掉 dry_run/心跳干跑模式），观察日志确认
-   代理/NIC.UA 登录/TG 会话/E/F 连通。
 
+   4、确保yml中 COLLECT_TG_FOR_DOMAIN 和 SHOW_DOMAIN_LIST都要改成true，等tg中收到域名列表的截图，这个截图的phone一栏会被正常的手机号填充，然后yml再把 COLLECT_TG_FOR_DOMAIN 改回false。
 ---
 
