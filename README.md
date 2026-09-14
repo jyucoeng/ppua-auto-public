@@ -93,7 +93,7 @@ python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).de
 
 | Secret | 说明 |
 |---|---|
-| `NICUA_BATCH` | **多账号**。每行 `email,password[,tg_notify_token,tg_notify_chat][#白名单|白名单1｜...][!黑名单|黑名单1｜...];email1,password1[,tg_notify_token1,tg_notify_chat1][#email1的白名单|email1的白名单1｜...][!email1的黑名单|email1的黑名单1｜...]`>`#`=账号级白名单（只处理这些域名）、`!`=账号级黑名单（排除这些），名单内多个域名用 **`|` 竖线** 分隔、均可选可单用；多账号用分号隔开，也就是如果有黑白名单就在黑白名单加分号，然后开始下一个账号；**名单同时约束「续期下单」与「待激活」两个阶段**（Activation is required 的域名同样先过名单，黑名单/不在白名单的待激活域名不会被执行激活）；示例见下 |
+| `NICUA_BATCH` | **多账号**。多账号用分号隔开，也就是如果有黑白名单就在黑白名单后加分号，然后开始下一个账号；**名单同时约束「续期下单」与「待激活」两个阶段**（Activation is required 的域名同样先过名单，黑名单/不在白名单的待激活域名不会被执行激活）；示例见下 |
 | `TG_LOGIN_BATCH` | **TG 用户会话 + 每手机号通知** 注册表（`setup_tg_session.py` 输出格式）：`phone,notify_bot_token,notify_chat_id,api_id,api_hash,session`，分号分隔多账号。**session 必须先手动跑一次 `setup_tg_session.py` 生成并填入**（；**该行的 notify_bot_token/notify_chat_id 用于给该手机号所有者发报告**（同一账号挂了别人的域名时，通知正确分流） |
 | `PRIVATE_REPO_TOKEN` | ⚠️ 当前用途：**只读**检出开发者私有代码仓（不再回写 state）。持久化已改为 私有 Gist(`GIST_ID`/`GIST_PAT`) + `STATE_ENCRYPT_KEY` 加密，见上方 [环境变量配置总清单](#环境变量配置总清单) 与新章节 |
 
