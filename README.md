@@ -9,7 +9,7 @@
     → 待激活域名【跳过下单，直接激活】；待续期域名走完整下单 → 获取 Payer 联系人
     → 校验手机号在 /en/my/contacts → [G] TG 预检门（用 Payer 手机号探活并比对）
     → 加入购物车（校验 0.00₴）→ 选择已保存联系人 → 提交免费订单
-    → "Activation is required" → [B] @ppuabot 激活（提取验证码）
+    → "Activation is required" → [B] 激活（提取验证码）
     → [C] apu.drs.ua（隐形 Turnstile 等按钮启用后提交）
     → [D] 校验（Activation is required 消失 且 到期日 +≥360 天）
     → [E] 域名监控同步（可选）→ [F] RenewHelper 同步（可选）
