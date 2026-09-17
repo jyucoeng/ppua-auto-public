@@ -127,7 +127,8 @@ TG_LOGIN_BATCH='+15551234567,123456:AA...bot_token,123456789,<api_id>,<api_hash>
 
 作用：workflow 用它**检出私有代码仓**并把 `state/` 加密状态**回写**回私有仓。创建于 GitHub 的 **Fine-grained personal access token**：
 
-- 入口：**https://github.com/settings/personal-access-tokens/new**（Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token）
+- 入口：**https://github.com/settings/personal-access-tokens/new**
+       （Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token）
 - 关键配置项：
   - **Resource owner**：选你自己的账号/组织（首次创建需邮件/浏览器确认批准一次）
   - **Expiration**：选 **No expiration（永不过期）**，一劳永逸，不用定期重生成
