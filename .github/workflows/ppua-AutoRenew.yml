@@ -12,7 +12,9 @@ permissions:
 jobs:
   renew:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # 这是「上限」不是预期耗时：单域名最坏 15 轮 × 30s ≈ 8 分钟，多账号 × 多域名串行时
+    # 90 分钟会被硬切断（切断后 artifact 有、TG 报告没有）。GitHub 单 job 上限 360。
+    timeout-minutes: 350
     concurrency:
       group: ppua # 这里如果部署多个yml,也要修改这里
       cancel-in-progress: true
@@ -78,8 +80,18 @@ jobs:
           [ -n "$PRIVATE_REPO_TOKEN" ] || { echo "❌ PRIVATE_REPO_TOKEN 未配置（开发者发的只读 PAT）"; exit 1; }
           [ -n "$GIST_ID" ]            || { echo "❌ GIST_ID 未配置（你私有 gist 的 id）"; exit 1; }
           [ -n "$GIST_PAT" ]           || { echo "❌ GIST_PAT 未配置（classic PAT，gist scope）"; exit 1; }
+          [ -n "$NICUA_BATCH" ]        || { echo "❌ NICUA_BATCH 未配置"; exit 1; }
           if [ -z "$STATE_ENCRYPT_KEY" ]; then
-            echo "❌ STATE_ENCRYPT_KEY 未配置，domain_phones 将以明文存入 gist（不推荐）"
+            echo "⚠️ STATE_ENCRYPT_KEY 未配置：TG 会话不会落盘、domain_phones 可能明文存入 gist"
+          fi
+          # PAT 过期/未授权时，checkout 只会报 "Repository not found"，极难排查 → 先探一次
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $PRIVATE_REPO_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_REPO")
+          if [ "$code" != "200" ]; then
+            echo "❌ PRIVATE_REPO_TOKEN 无法访问 $PRIVATE_REPO（HTTP $code）：PAT 已过期或未授权该私有仓"
+            exit 1
           fi
 
       - name: 检出开发者私有代码仓（只读）
@@ -142,17 +154,25 @@ jobs:
             ${{ env.APP_DIR }}/socks5_proxy.txt
             ${{ env.APP_DIR }}/proxy_result.json
             ${{ env.APP_DIR }}/screenshots/**/*
-          retention-days: 400
+          # 公开仓 artifact 保留期上限 90 天（超过会被服务端拒绝/静默截断），
+          # 400 天也没有意义：审计截图只服务于最近几次排查。
+          retention-days: 30
           if-no-files-found: warn
 
       - name: 清理本地审计产物
         if: always()
         working-directory: ${{ env.APP_DIR }}
         run: |
-          rm -rf screenshots sing-box_config.json socks5_proxy.txt proxy_result.json || true
+          # state/：write_state_session 产生的会话缓存（含加密后的 session）
+          # use_external_socks.txt：旧版 parse_socks5 的残留副作用文件
+          rm -rf screenshots sing-box_config.json socks5_proxy.txt proxy_result.json \
+                 use_external_socks.txt state __pycache__ || true
 
       - name: 提交执行时间
         if: always()
+        # time.txt 只是「保活用」的提交：分支保护 / 并发 rebase 冲突不该把整轮标记为失败
+        # （此时续期与 TG 报告早已完成）
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -162,11 +182,12 @@ jobs:
             echo "time.txt 无变化"
           else
             git commit -m "更新时间文件: $(date +'%Y-%m-%d %H:%M:%S')"
-            git pull --rebase origin main
+            git pull --rebase --autostash origin main || true
             git push origin HEAD:main
           fi
 
       - name: 清理旧运行
+        if: always()
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
